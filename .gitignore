@@ -1,0 +1,39 @@
+# dependencies
+**/node_modules
+/app/.pnp
+app/.pnp.*
+
+# testing
+/app/coverage
+/app/test-results
+
+# next.js
+/app/.next/
+/app/out/
+
+# production
+/app/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files -- never commit secrets/local config
+.env*
+!app/.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+app/next-env.d.ts
+
+# local editor/tooling caches -- machine-specific, not project content
+app/.impeccable/

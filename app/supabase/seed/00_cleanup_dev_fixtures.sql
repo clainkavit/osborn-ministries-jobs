@@ -1,0 +1,48 @@
+-- M10 dev/demo database cleanup -- Decision 1 (Champion, 2026-09-13).
+--
+-- Removes nine milestones' worth of accumulated Playwright E2E fixture data
+-- from the development Supabase project (libnhxdkjkqwlcjeurex.supabase.co)
+-- so the Stage 14 Section A demo dataset can be loaded at a realistic,
+-- uncontaminated scale. NOT a migration -- schema, RLS, and business logic
+-- are untouched by this script.
+--
+-- Scope, exactly as authorized:
+--   - every members row with role = 'MEMBER' (every test-created fixture
+--     member across M1-M9), and everything that cascades from it:
+--     education, experience, member_skills, certifications, documents,
+--     verification_history, notifications, applications (as applicant),
+--     application_outcomes (via applications' own cascade).
+--   - every opportunities row (all were created by the one preserved admin
+--     account via created_by -- opportunities are not owned by a cascading
+--     member reference, so they need their own explicit delete), and
+--     everything that cascades from it: opportunity_requirements,
+--     opportunity_required_skills, any remaining applications tied to it.
+--
+-- Explicitly preserved, never touched by this script:
+--   - every members row with role IN ('CHURCH_ADMIN', 'SUPER_ADMIN') --
+--     deleted by role, not by a specific email, so no admin account (known
+--     or not) is ever at risk.
+--   - professions, skills (taxonomy -- referenced by primary_profession_id
+--     ON DELETE SET NULL and by member_skills/opportunity_required_skills
+--     CASCADE, but the taxonomy rows themselves are never targeted here).
+--
+-- Confirmed safe against the schema's actual foreign-key definitions
+-- (supabase/migrations/001-005): opportunities.created_by and
+-- application_outcomes.recorded_by both reference members(id) with NO
+-- cascade (RESTRICT by default) -- but both columns are only ever set to
+-- gate.admin.id in application code (lib/opportunities/actions.ts,
+-- lib/applications/actions.ts), never to a member's id, so deleting
+-- non-admin members can never hit that constraint. Deleting opportunities
+-- separately, after members, means their own admin-owned created_by
+-- reference is likewise never at risk (the admin row is never deleted).
+--
+-- Run this against the DEVELOPMENT project only. Never run this against a
+-- production Supabase project -- there is no automated safeguard in this
+-- script that checks which project it's running against; that check is the
+-- operator's responsibility, same as any other hand-run SQL in this
+-- project's established seeding pattern (see the CHURCH_ADMIN seeding note
+-- in migration 003).
+
+delete from public.members where role = 'MEMBER';
+
+delete from public.opportunities;
